@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Llama Plus | Llama Inc.</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="banner">
+    Demo in Stripe test mode. No real charges. Use test card <code>4242 4242 4242 4242</code>, any future date, any CVC.
+  </div>
+  <header><div class="logo">L</div>Llama Inc.</header>
+  <main>
+    <section class="hero">
+      <h1>Alpaca your bags, we'll plan the rest.</h1>
+      <p>Your AI travel assistant, now with premium features.</p>
+    </section>
+
+    <div class="center">
+      <div class="toggle" role="tablist">
+        <button type="button" id="btn-monthly" class="active">Monthly</button>
+        <button type="button" id="btn-yearly">Yearly</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 id="product-name">Llama Plus</h2>
+      <p class="price" id="price">&nbsp;</p>
+      <p class="note" id="price-note">&nbsp;</p>
+      <ul>
+        <li>Unlimited AI trip plans</li>
+        <li>Offline itineraries</li>
+        <li>Real-time flight and booking alerts</li>
+        <li>Shareable plans for group trips</li>
+      </ul>
+      <form action="/create-checkout-session" method="POST">
+        <input type="hidden" name="plan" id="plan" value="monthly" />
+        <button type="submit" class="btn" id="checkout-button">Start free trial</button>
+      </form>
+      <p class="fine" id="trial-note">&nbsp;</p>
+    </div>
+  </main>
+
+  <script>
+    let config;
+    const fmt = (amount, currency) =>
+      new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount / 100);
+
+    function render(plan) {
+      document.getElementById('plan').value = plan;
+      document.getElementById('btn-monthly').classList.toggle('active', plan === 'monthly');
+      document.getElementById('btn-yearly').classList.toggle('active', plan === 'yearly');
+      if (!config) return;
+      const p = config[plan];
+      document.getElementById('price').innerHTML =
+        `${fmt(p.amount, p.currency)} <span>/ ${p.interval}</span>`;
+      if (plan === 'yearly') {
+        const perMonth = fmt(Math.round(p.amount / 12), p.currency);
+        const fullYear = config.monthly.amount * 12;
+        const saving = fullYear > p.amount ? Math.round((1 - p.amount / fullYear) * 100) : 0;
+        document.getElementById('price-note').textContent =
+          `${perMonth} per month, billed yearly${saving ? ` (save ${saving}%)` : ''}`;
+      } else {
+        document.getElementById('price-note').textContent = 'Billed monthly, cancel anytime';
+      }
+    }
+
+    document.getElementById('btn-monthly').onclick = () => render('monthly');
+    document.getElementById('btn-yearly').onclick = () => render('yearly');
+
+    fetch('/config')
+      .then((r) => r.json())
+      .then((c) => {
+        if (c.error) throw new Error(c.error);
+        config = c;
+        document.getElementById('product-name').textContent = c.product;
+        document.getElementById('trial-note').textContent =
+          `${c.trialDays}-day free trial. You won't be charged until it ends.`;
+        render(document.getElementById('plan').value);
+      })
+      .catch((e) => {
+        document.getElementById('price').innerHTML = `<span class="error">${e.message}</span>`;
+      });
+  </script>
+</body>
+</html>

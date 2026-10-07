@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Welcome to Llama Plus</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header><div class="logo">L</div>Llama Inc.</header>
+  <main>
+    <div class="card">
+      <h2>You're in. Happy travels!</h2>
+      <p class="note" id="details">Loading your subscription...</p>
+      <form action="/create-portal-session" method="POST">
+        <input type="hidden" name="session_id" id="session-id" />
+        <button type="submit" class="btn">Manage subscription</button>
+      </form>
+      <p class="fine">Update your card, switch plans, or cancel anytime.</p>
+      <p class="fine"><a href="/">Back to Llama</a></p>
+    </div>
+  </main>
+  <script>
+    const sessionId = new URLSearchParams(window.location.search).get('session_id');
+    document.getElementById('session-id').value = sessionId || '';
+    fetch(`/session-status?session_id=${encodeURIComponent(sessionId || '')}`)
+      .then((r) => r.json())
+      .then((s) => {
+        if (s.error) throw new Error(s.error);
+        const parts = [];
+        if (s.email) parts.push(`A receipt will go to ${s.email}.`);
+        if (s.subscriptionStatus === 'trialing' && s.trialEnd) {
+          const end = new Date(s.trialEnd * 1000).toLocaleDateString();
+          parts.push(`Your free trial runs until ${end}.`);
+        } else if (s.subscriptionStatus) {
+          parts.push(`Subscription status: ${s.subscriptionStatus}.`);
+        }
+        document.getElementById('details').textContent = parts.join(' ');
+      })
+      .catch(() => {
+        document.getElementById('details').textContent =
+          "We couldn't load your subscription details, but your checkout is complete.";
+      });
+  </script>
+</body>
+</html>

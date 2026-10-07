@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Webhook events | Llama Inc. demo</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header><div class="logo">L</div>Llama Inc. webhook log</header>
+  <main>
+    <p class="note">Recent Stripe events received by this demo's webhook endpoint (newest first). Resets when the server restarts.</p>
+    <table>
+      <thead><tr><th>Received</th><th>Event type</th><th>Object</th><th>Status</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="4">Loading...</td></tr></tbody>
+    </table>
+  </main>
+  <script>
+    fetch('/events').then((r) => r.json()).then((events) => {
+      const rows = document.getElementById('rows');
+      if (!events.length) {
+        rows.innerHTML = '<tr><td colspan="4">No events yet. Complete a test checkout, then refresh.</td></tr>';
+        return;
+      }
+      rows.innerHTML = '';
+      events.forEach((e) => {
+        const tr = document.createElement('tr');
+        [new Date(e.received).toLocaleString(), e.type, e.object_id || '', e.status || '']
+          .forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+        rows.appendChild(tr);
+      });
+    });
+  </script>
+</body>
+</html>
